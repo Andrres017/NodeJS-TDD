@@ -1,30 +1,32 @@
 const request = require('supertest')
 
 const { app } = require('../server')
+const { connect, getUri, closeDb } = require('../db')
 const { Builder } = require('../builders/product-builder.js')
-const { store } = require('../services/product-service')
 
-jest.mock('../services/product-service.js')
-
-beforeEach(() => {
-  store.mockReset()
+beforeAll(async () => {
+  const uri = await getUri()
+  await connect({ uri })
 })
 
+afterAll(async () => {
+  await closeDb()
+})
+//hola
 describe('POST /products', () => {
   test('should store a new product', async () => {
-    // code...
-  })
-
-  test('should execute store function', async () => {
     const product = Builder.product()
 
-    await request(app)
+    const response = await request(app)
       .post('/products')
       .send(product)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(201)
 
-    expect(store).toHaveBeenCalledWith(product)
+    const { _id, ...productStored } = response.body
+
+    expect(productStored).toEqual(product)
+    expect(_id).toBeTruthy()
   })
 })
